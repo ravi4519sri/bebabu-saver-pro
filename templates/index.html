@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bebabu Saver Pro - YouTube + StarMaker</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a1a">
+    
+    <style>
+        /* ============ RESET & BASE ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: 
+                radial-gradient(ellipse at 10% 20%, rgba(247, 151, 30, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 80%, rgba(108, 92, 231, 0.08) 0%, transparent 50%);
+        }
+
+        /* ============ GLASS CARD ============ */
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 40px 35px;
+            max-width: 620px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Glow effect */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(247, 151, 30, 0.03), transparent 60%);
+            pointer-events: none;
+        }
+
+        /* ============ INSTALL BANNER ============ */
+        .install-banner {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            border-radius: 16px;
+            padding: 14px 20px;
+            margin-bottom: 25px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            color: #0a0a1a;
+            font-weight: 700;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+            animation: slideDown 0.5s ease;
+        }
+        .install-banner.show {
+            display: flex;
+        }
+        .install-banner .btn-install {
+            background: #0a0a1a;
+            color: #ffd200;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .install-banner .btn-install:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============ LOGO ============ */
+        .logo {
+            text-align: center;
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        .logo .icon-big {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .logo h1 {
+            color: #fff;
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .logo h1 span {
+            background: linear-gradient(135deg, #f7971e, #ffd200, #f7971e);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .logo .subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* ============ BADGES ============ */
+        .badge-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 14px 0 20px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .badge {
+            padding: 5px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .badge-youtube {
+            background: rgba(255, 0, 0, 0.15);
+            color: #ff4444;
+            border: 1px solid rgba(255, 0, 0, 0.2);
+        }
+        .badge-starmaker {
+            background: rgba(0, 212, 255, 0.12);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        /* ============ FOLDER STRUCTURE ============ */
+        .folder-info {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            padding: 16px 20px;
+            margin: 16px 0 22px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            position: relative;
+            z-index: 1;
+        }
+        .folder-info .folder-title {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .folder-info .folder-tree {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            line-height: 2;
+        }
+        .folder-info .folder-tree .highlight-main {
+            color: #ffd200;
+        }
+        .folder-info .folder-tree .highlight-youtube {
+            color: #ff6b6b;
+        }
+        .folder-info .folder-tree .highlight-starmaker {
+            color: #00d4ff;
+        }
+        .folder-info .folder-tree .arrow {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ============ INPUT ============ */
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .input-group label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.04);
+            color: #fff;
+            font-size: 15px;
+            transition: 0.3s;
+            outline: none;
+        }
+        .input-group input:focus {
+            border-color: #f7971e;
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 30px rgba(247, 151, 30, 0.05);
+        }
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ============ BUTTONS ============ */
+        .btn-group {
+            display: flex;
+            gap: 14px;
+            margin: 18px 0 22px;
+            position: relative;
+            z-index: 1;
+        }
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-mp3 {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: #fff;
+        }
+        .btn-mp3:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px rgba(0, 206, 201, 0.25);
+        }
+        .btn-mp4 {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: #fff;
+        }
+        .btn-mp4:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px rgba(108, 92, 231, 0.25);
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* ============ MESSAGE ============ */
+        .message {
+            margin-top: 18px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+            line-height: 1.6;
+        }
+        .message.success {
+            display: block;
+            background: rgba(0, 206, 201, 0.08);
+            border: 1px solid rgba(0, 206, 201, 0.2);
+            color: #00cec9;
+        }
+        .message.error {
+            display: block;
+            background: rgba(255, 107, 107, 0.08);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+        .message.info {
+            display: block;
+            background: rgba(253, 203, 110, 0.08);
+            border: 1px solid rgba(253, 203, 110, 0.15);
+            color: #fdcb6e;
+        }
+        .message .platform-tag {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-right: 6px;
+        }
+        .message .platform-youtube {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4444;
+        }
+        .message .platform-starmaker {
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+        }
+
+        /* ============ SHARE SECTION ============ */
+        .share-section {
+            margin-top: 22px;
+            padding: 18px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 18px;
+            border: 1px dashed rgba(255, 255, 255, 0.05);
+            position: relative;
+            z-index: 1;
+        }
+        .share-section .share-title {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .share-section .share-btn {
+            display: inline-block;
+            padding: 9px 18px;
+            border-radius: 12px;
+            border: none;
+            margin: 4px 4px 4px 0;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+        .share-section .share-btn:hover {
+            transform: scale(1.04);
+        }
+        .share-btn-whatsapp {
+            background: #25D366;
+            color: #fff;
+        }
+        .share-btn-telegram {
+            background: #0088cc;
+            color: #fff;
+        }
+        .share-btn-copy {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* ============ FOOTER ============ */
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.12);
+            font-size: 11px;
+            margin-top: 25px;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+        }
+        .footer .heart {
+            color: rgba(255, 107, 107, 0.4);
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 480px) {
+            .container {
+                padding: 28px 20px;
+                border-radius: 24px;
+            }
+            .logo h1 {
+                font-size: 24px;
+            }
+            .btn-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .btn {
+                padding: 14px;
+            }
+            .install-banner {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ===== INSTALL BANNER ===== -->
+        <div class="install-banner" id="installBanner">
+            <span>📲 Install App for best experience!</span>
+            <button class="btn-install" id="installBtn">Install Now</button>
+        </div>
+
+        <!-- ===== LOGO ===== -->
+        <div class="logo">
+            <span class="icon-big">🎵</span>
+            <h1><span>Bebabu Saver Pro</span></h1>
+            <p class="subtitle">YouTube + StarMaker Downloader</p>
+        </div>
+
+        <!-- ===== BADGES ===== -->
+        <div class="badge-container">
+            <span class="badge badge-youtube">▶ YouTube</span>
+            <span class="badge badge-starmaker">⭐ StarMaker</span>
+        </div>
+
+        <!-- ===== FOLDER STRUCTURE ===== -->
+        <div class="folder-info">
+            <div class="folder-title">📁 Auto Folder Structure</div>
+            <div class="folder-tree">
+                <span class="highlight-main">📂 Bebabu Saver Pro/</span><br>
+                <span class="arrow">├──</span> <span class="highlight-youtube">📂 YouTube/</span> <span style="color:rgba(255,255,255,0.2);">← MP3 + MP4</span><br>
+                <span class="arrow">└──</span> <span class="highlight-starmaker">📂 StarMaker/</span> <span style="color:rgba(255,255,255,0.2);">← MP3 + MP4</span>
+            </div>
+        </div>
+
+        <!-- ===== INPUT ===== -->
+        <div class="input-group">
+            <label>🔗 Paste your YouTube or StarMaker link</label>
+            <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=... or https://starmaker...">
+        </div>
+
+        <!-- ===== BUTTONS ===== -->
+        <div class="btn-group">
+            <button class="btn btn-mp3" id="mp3Btn">🎵 Download MP3</button>
+            <button class="btn btn-mp4" id="mp4Btn">🎬 Download MP4</button>
+        </div>
+
+        <!-- ===== MESSAGE ===== -->
+        <div class="message" id="message"></div>
+
+        <!-- ===== SHARE SECTION ===== -->
+        <div class="share-section">
+            <div class="share-title">📤 Share with Friends</div>
+            <button class="share-btn share-btn-whatsapp" onclick="shareWhatsApp()">📱 WhatsApp</button>
+            <button class="share-btn share-btn-telegram" onclick="shareTelegram()">✈️ Telegram</button>
+            <button class="share-btn share-btn-copy" onclick="copyLink()">📋 Copy Link</button>
+        </div>
+
+        <!-- ===== FOOTER ===== -->
+        <div class="footer">
+            Made with <span class="heart">❤️</span> for Raviraj Bhai &nbsp;·&nbsp; Auto-detects platform
+        </div>
+
+    </div>
+
+    <script>
+        // ============================================================
+        // 1. PWA INSTALL LOGIC
+        // ============================================================
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.classList.add('show');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result.outcome === 'accepted') {
+                    installBanner.classList.remove('show');
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // ============================================================
+        // 2. APP LOGIC
+        // ============================================================
+        const urlInput = document.getElementById('urlInput');
+        const mp3Btn = document.getElementById('mp3Btn');
+        const mp4Btn = document.getElementById('mp4Btn');
+        const messageDiv = document.getElementById('message');
+
+        const shareUrl = window.location.href;
+
+        function showMessage(text, type, platform = null) {
+            messageDiv.className = 'message ' + type;
+            let platformTag = '';
+            if (platform === 'youtube') {
+                platformTag = '<span class="platform-tag platform-youtube">▶ YouTube</span> ';
+            } else if (platform === 'starmaker') {
+                platformTag = '<span class="platform-tag platform-starmaker">⭐ StarMaker</span> ';
+            }
+            messageDiv.innerHTML = platformTag + text;
+            messageDiv.style.display = 'block';
+        }
+
+        function download(format) {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showMessage('❌ Kripya ek valid URL daalein!', 'error');
+                return;
+            }
+
+            let platform = 'unknown';
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                platform = 'youtube';
+            } else if (url.includes('starmaker')) {
+                platform = 'starmaker';
+            } else {
+                showMessage('❌ Sirf YouTube ya StarMaker URL daalein!', 'error');
+                return;
+            }
+
+            mp3Btn.disabled = true;
+            mp4Btn.disabled = true;
+
+            showMessage(`⏳ ${platform.toUpperCase()} ${format.toUpperCase()} download starting...`, 'info', platform);
+
+            fetch('/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url, format_type: format })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const folderDisplay = platform === 'youtube' ? 'YouTube' : 'StarMaker';
+                    showMessage(`✅ ${data.message}<br>📁 Saved in: Bebabu Saver Pro / ${folderDisplay}/`, 'success', platform);
+                    urlInput.value = '';
+                } else {
+                    showMessage(`❌ ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                mp3Btn.disabled = false;
+                mp4Btn.disabled = false;
+            });
+        }
+
+        // ============================================================
+        // 3. SHARE FUNCTIONS
+        // ============================================================
+        function shareWhatsApp() {
+            const msg = `🎵 *Bebabu Saver Pro* - YouTube + StarMaker Downloader\n\n🔗 Use here: ${shareUrl}\n\n📁 Auto creates folders:\n- YouTube/ (MP3 + MP4)\n- StarMaker/ (MP3 + MP4)\n\n⭐ Just paste link and download!`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function shareTelegram() {
+            const msg = `🎵 *Bebabu Saver Pro* - YouTube + StarMaker Downloader\n\n🔗 Use here: ${shareUrl}\n\n📁 Auto creates folders:\n- YouTube/ (MP3 + MP4)\n- StarMaker/ (MP3 + MP4)\n\n⭐ Just paste link and download!`;
+            window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showMessage('✅ Link copied! Share with friends!', 'success');
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showMessage('✅ Link copied! Share with friends!', 'success');
+            });
+        }
+
+        // ============================================================
+        // 4. EVENT LISTENERS
+        // ============================================================
+        mp3Btn.addEventListener('click', () => download('mp3'));
+        mp4Btn.addEventListener('click', () => download('mp4'));
+
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                mp3Btn.click();
+            }
+        });
+    </script>
+
+</body>
+</html>
