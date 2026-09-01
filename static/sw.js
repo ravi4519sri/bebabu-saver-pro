@@ -1,9 +1,8 @@
-const CACHE_NAME = 'bebabu-saver-v1';
+const CACHE_NAME = 'bebabu-saver-v2';
 const urlsToCache = [
   '/',
-  '/static/manifest.json',
-  '/static/icon-192x192.png',
-  '/static/icon-512x512.png'
+  '/static/icons/Bebabu Saver Pro Logo.png',
+  '/static/manifest.json'
 ];
 
 // Install Service Worker

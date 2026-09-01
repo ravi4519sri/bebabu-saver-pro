@@ -14,8 +14,13 @@ app = Flask(__name__)
 # ============ FFmpeg Setup ============
 static_ffmpeg.add_paths()
 
-# ============ Main Folder Structure ============
-BASE_DIR = os.path.join(os.path.expanduser("~"), "Bebabu Saver Pro")
+# ============ Folder Paths ============
+# Render platform detection
+if os.path.exists("/opt/render"):
+    BASE_DIR = "/opt/render/Bebabu Saver Pro"
+else:
+    BASE_DIR = os.path.join(os.path.expanduser("~"), "Bebabu Saver Pro")
+
 YOUTUBE_DIR = os.path.join(BASE_DIR, "YouTube")
 STARMAKER_DIR = os.path.join(BASE_DIR, "StarMaker")
 
@@ -153,26 +158,23 @@ def download_song():
     format_type = data.get('format_type', 'mp3')
     
     if not url:
-        return jsonify({'success': False, 'message': 'Kripya ek valid URL daalein!'})
+        return jsonify({'success': False, 'message': 'Please enter a valid URL!'})
     
     if 'youtube.com' in url.lower() or 'youtu.be' in url.lower():
         platform = 'youtube'
     elif 'starmaker' in url.lower():
         platform = 'starmaker'
     else:
-        return jsonify({'success': False, 'message': 'Sirf YouTube ya StarMaker URL daalein!'})
+        return jsonify({'success': False, 'message': 'Only YouTube or StarMaker URLs are supported!'})
     
     try:
         download_thread = threading.Thread(target=bg_download, args=(url, format_type, platform))
         download_thread.start()
         
-        folder_path = YOUTUBE_DIR if platform == 'youtube' else STARMAKER_DIR
-        
         return jsonify({
             'success': True,
             'message': f'{platform.upper()} {format_type.upper()} download started!',
-            'platform': platform,
-            'folder': folder_path
+            'platform': platform
         })
     except Exception as e:
         return jsonify({'success': False, 'message': f"Error: {str(e)}"})
