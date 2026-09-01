@@ -331,7 +331,7 @@
 
     <script>
         // ============================================================
-        // 1. PASTE BUTTON
+        // PASTE BUTTON
         // ============================================================
         const urlInput = document.getElementById('urlInput');
         const pasteBtn = document.getElementById('pasteBtn');
@@ -349,7 +349,7 @@
         });
 
         // ============================================================
-        // 2. DOWNLOAD LOGIC
+        // DOWNLOAD LOGIC
         // ============================================================
         const mp3Btn = document.getElementById('mp3Btn');
         const mp4Btn = document.getElementById('mp4Btn');
@@ -381,7 +381,7 @@
             }
 
             let platform = 'unknown';
-            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('/shorts/')) {
                 platform = 'youtube';
             } else if (url.includes('starmaker')) {
                 platform = 'starmaker';
@@ -393,9 +393,8 @@
             mp3Btn.disabled = true;
             mp4Btn.disabled = true;
 
-            showMessage(`⏳ Downloading ${format.toUpperCase()}... Please wait. This may take 10-30 seconds.`, 'info', platform);
+            showMessage(`⏳ ${platform.toUpperCase()} ${format.toUpperCase()} download starting... Please wait.`, 'info', platform);
 
-            // Use fetch to get the file
             fetch('/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -403,12 +402,16 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Download failed');
+                    return response.text().then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            throw new Error(data.message || 'Download failed');
+                        } catch {
+                            throw new Error('Download failed! Please try again.');
+                        }
                     });
                 }
                 
-                // Get filename from Content-Disposition header
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let filename = format === 'mp3' ? 'audio.mp3' : 'video.mp4';
                 if (contentDisposition) {
@@ -416,7 +419,6 @@
                     if (match) filename = match[1];
                 }
                 
-                // Convert response to blob and download
                 return response.blob().then(blob => {
                     const downloadUrl = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -427,7 +429,7 @@
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(downloadUrl);
                     
-                    showMessage(`✅ ${format.toUpperCase()} download completed! File saved to your device.`, 'success', platform);
+                    showMessage(`✅ ${format.toUpperCase()} download completed!`, 'success', platform);
                     urlInput.value = '';
                 });
             })
@@ -450,7 +452,7 @@
         });
 
         // ============================================================
-        // 3. SERVICE WORKER
+        // SERVICE WORKER
         // ============================================================
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
@@ -458,7 +460,6 @@
                 .catch(() => console.log('Service Worker registration failed'));
         }
 
-        // Logo fallback
         document.getElementById('appLogo').addEventListener('error', function() {
             this.style.display = 'none';
             const container = this.parentElement;
