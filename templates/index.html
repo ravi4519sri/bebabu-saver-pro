@@ -349,7 +349,7 @@
         });
 
         // ============================================================
-        // DOWNLOAD LOGIC
+        // DOWNLOAD LOGIC - FIXED WITH CONTENT-TYPE CHECK
         // ============================================================
         const mp3Btn = document.getElementById('mp3Btn');
         const mp4Btn = document.getElementById('mp4Btn');
@@ -401,36 +401,48 @@
                 body: JSON.stringify({ url: url, format_type: format })
             })
             .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        try {
-                            const data = JSON.parse(text);
-                            throw new Error(data.message || 'Download failed');
-                        } catch {
-                            throw new Error('Download failed! Please try again.');
-                        }
+                // ==========================================================
+                // STARMAKER FIX: Check Content-Type before parsing JSON
+                // ==========================================================
+                const contentType = response.headers.get('Content-Type') || '';
+                
+                // If response is a file (binary), handle as blob download
+                if (contentType.includes('application/octet-stream') || 
+                    contentType.includes('video/') || 
+                    contentType.includes('audio/')) {
+                    
+                    // Get filename from Content-Disposition
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = format === 'mp3' ? 'audio.mp3' : 'video.mp4';
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                        if (match) filename = match[1];
+                    }
+                    
+                    // Download the file
+                    return response.blob().then(blob => {
+                        const downloadUrl = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = downloadUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(downloadUrl);
+                        
+                        showMessage(`✅ ${format.toUpperCase()} download completed!`, 'success', platform);
+                        urlInput.value = '';
                     });
                 }
                 
-                const contentDisposition = response.headers.get('Content-Disposition');
-                let filename = format === 'mp3' ? 'audio.mp3' : 'video.mp4';
-                if (contentDisposition) {
-                    const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                    if (match) filename = match[1];
-                }
-                
-                return response.blob().then(blob => {
-                    const downloadUrl = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(downloadUrl);
-                    
-                    showMessage(`✅ ${format.toUpperCase()} download completed!`, 'success', platform);
-                    urlInput.value = '';
+                // Otherwise, try to parse as JSON (for error messages)
+                return response.json().then(data => {
+                    if (data.success) {
+                        showMessage(`✅ ${format.toUpperCase()} download completed!`, 'success', platform);
+                        urlInput.value = '';
+                    } else {
+                        throw new Error(data.message || 'Download failed');
+                    }
                 });
             })
             .catch(error => {
