@@ -18,36 +18,44 @@ function download(format) {
     mp3Btn.disabled = true;
     mp4Btn.disabled = true;
 
-    showMessage(`⏳ ${platform.toUpperCase()} ${format.toUpperCase()} download starting...`, 'info', platform);
+    showMessage(`⏳ Downloading ${format.toUpperCase()}... Please wait.`, 'info', platform);
 
     fetch('/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url, format_type: format })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showMessage(`✅ ${platform.toUpperCase()} ${format.toUpperCase()} download completed! File downloading now...`, 'success', platform);
-            
-            // Auto-download the file
-            const downloadId = data.download_id;
-            setTimeout(() => {
-                window.location.href = `/get_file/${downloadId}`;
-            }, 1000);
-            
-            urlInput.value = '';
-        } else {
-            showMessage(`❌ ${data.message}`, 'error');
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.message || 'Download failed');
+            });
         }
+        // If response is a file, download it
+        return response.blob().then(blob => {
+            const a = document.createElement('a');
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'download.mp3';
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (match) filename = match[1];
+            }
+            const url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showMessage(`✅ ${format.toUpperCase()} download completed!`, 'success', platform);
+            urlInput.value = '';
+        });
     })
     .catch(error => {
-        showMessage(`❌ Error: ${error.message}`, 'error');
+        showMessage(`❌ ${error.message}`, 'error');
     })
     .finally(() => {
-        setTimeout(() => {
-            mp3Btn.disabled = false;
-            mp4Btn.disabled = false;
-        }, 2000);
+        mp3Btn.disabled = false;
+        mp4Btn.disabled = false;
     });
 }
