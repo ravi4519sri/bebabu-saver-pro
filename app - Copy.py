@@ -7,7 +7,6 @@ import requests
 import subprocess
 import time
 import shutil
-import uuid
 import tempfile
 
 app = Flask(__name__)
@@ -19,8 +18,12 @@ try:
 except Exception as e:
     print(f"[FFMPEG] Error: {e}")
 
+# ============ Temp Folder ============
+TEMP_DIR = tempfile.mkdtemp()
+print(f"\n📁 Temp Folder: {TEMP_DIR}\n")
+
 # ============ YouTube Download ============
-def youtube_download(url, format_type, job_dir):
+def youtube_download(url, format_type):
     try:
         if '/shorts/' in url:
             video_id = url.split('/shorts/')[-1].split('?')[0]
@@ -32,7 +35,7 @@ def youtube_download(url, format_type, job_dir):
             'no_warnings': True,
             'ignoreerrors': True,
             'noplaylist': True,
-            'outtmpl': os.path.join(job_dir, '%(title)s.%(ext)s'),
+            'outtmpl': os.path.join(TEMP_DIR, '%(title)s.%(ext)s'),
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         }
         
@@ -44,7 +47,7 @@ def youtube_download(url, format_type, job_dir):
                 'preferredquality': '192',
             }]
         else:
-            ydl_opts['format'] = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best'
+            ydl_opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
         
         print(f"[YOUTUBE] Starting download...")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -60,7 +63,7 @@ def youtube_download(url, format_type, job_dir):
         return None
 
 # ============ StarMaker Download ============
-def starmaker_download(url, format_type, job_dir):
+def starmaker_download(url, format_type):
     try:
         match = re.search(r"recordingId=(\d+)", url)
         if not match:
@@ -68,8 +71,8 @@ def starmaker_download(url, format_type, job_dir):
             return None
         
         rec_id = match.group(1)
-        mp4_file = os.path.join(job_dir, f"bebabu_{rec_id}.mp4")
-        mp3_file = os.path.join(job_dir, f"StarMaker_{rec_id}.mp3")
+        mp4_file = os.path.join(TEMP_DIR, f"bebabu_{rec_id}.mp4")
+        mp3_file = os.path.join(TEMP_DIR, f"StarMaker_{rec_id}.mp3")
         direct_mp4_url = f"https://static.smintro.com/production/uploading/recordings/{rec_id}/master.mp4"
         
         print(f"[STARMAKER] Downloading ID: {rec_id}")
@@ -88,7 +91,10 @@ def starmaker_download(url, format_type, job_dir):
         
         if format_type == 'mp3':
             print("[STARMAKER] Converting to MP3...")
-            ff_path = shutil.which('ffmpeg') or 'ffmpeg'
+            ff_path = shutil.which('ffmpeg') or os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Links\ffmpeg.exe")
+            if not os.path.exists(ff_path):
+                ff_path = 'ffmpeg'
+            
             subprocess.run([ff_path, "-y", "-i", mp4_file, "-vn", "-ar", "44100", "-ac", "2", "-b:a", "192k", mp3_file],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             print(f"[STARMAKER] MP3 created")
@@ -136,19 +142,12 @@ def download_song():
         else:
             return jsonify({'success': False, 'message': 'Only YouTube or StarMaker URLs are supported!'}), 400
         
-        # Create unique job directory
-        job_id = str(uuid.uuid4())
-        base_tmp = "/tmp/bebabu_saver_pro"
-        job_dir = os.path.join(base_tmp, job_id)
-        os.makedirs(job_dir, exist_ok=True)
-        print(f"[DOWNLOAD] Job dir: {job_dir}")
-        
         print(f"[DOWNLOAD] Platform: {platform}, Format: {format_type}")
         
         if platform == 'youtube':
-            file_path = youtube_download(url, format_type, job_dir)
+            file_path = youtube_download(url, format_type)
         else:
-            file_path = starmaker_download(url, format_type, job_dir)
+            file_path = starmaker_download(url, format_type)
         
         if not file_path or not os.path.exists(file_path):
             print(f"[DOWNLOAD] File not found: {file_path}")
@@ -157,25 +156,12 @@ def download_song():
         filename = os.path.basename(file_path)
         print(f"[DOWNLOAD] Sending file: {filename}")
         
-        # Send file to user
-        response = send_file(
+        return send_file(
             file_path,
             as_attachment=True,
             download_name=filename,
             mimetype='application/octet-stream'
         )
-        
-        # Cleanup after response
-        @response.call_on_close
-        def cleanup():
-            try:
-                import shutil
-                shutil.rmtree(job_dir, ignore_errors=True)
-                print(f"[CLEANUP] Removed: {job_dir}")
-            except Exception as e:
-                print(f"[CLEANUP ERROR] {e}")
-        
-        return response
         
     except Exception as e:
         print(f"[DOWNLOAD ERROR] {str(e)}")

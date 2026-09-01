@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bebabu Saver Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #fff; font-size: 28px; font-weight: 700; }
+        .logo h1 span { background: linear-gradient(135deg, #f7971e, #ffd200); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo p { color: #aaa; font-size: 14px; margin-top: 5px; }
+        .badge-container { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
+        .badge { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-youtube { background: #ff0000; color: white; }
+        .badge-starmaker { background: #00d4ff; color: #1a1a2e; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { color: #ccc; font-size: 14px; display: block; margin-bottom: 8px; }
+        .input-group input { width: 100%; padding: 15px 20px; border-radius: 15px; border: 2px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: white; font-size: 16px; transition: 0.3s; }
+        .input-group input:focus { outline: none; border-color: #f7971e; background: rgba(255, 255, 255, 0.08); }
+        .input-group input::placeholder { color: #666; }
+        .btn-group { display: flex; gap: 15px; margin: 20px 0; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 15px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-mp3 { background: linear-gradient(135deg, #00b894, #00cec9); color: white; }
+        .btn-mp3:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 206, 201, 0.3); }
+        .btn-mp4 { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; }
+        .btn-mp4:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        .message { margin-top: 20px; padding: 15px; border-radius: 15px; display: none; }
+        .message.success { display: block; background: rgba(0, 206, 201, 0.15); border: 1px solid #00cec9; color: #00cec9; }
+        .message.error { display: block; background: rgba(255, 107, 107, 0.15); border: 1px solid #ff6b6b; color: #ff6b6b; }
+        .message.info { display: block; background: rgba(253, 203, 110, 0.15); border: 1px solid #fdcb6e; color: #fdcb6e; }
+        .message .platform-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; margin-bottom: 5px; }
+        .message .platform-youtube { background: #ff0000; color: white; }
+        .message .platform-starmaker { background: #00d4ff; color: #1a1a2e; }
+        .footer { text-align: center; color: #555; font-size: 12px; margin-top: 25px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🎵 <span>Bebabu Saver Pro</span></h1>
+            <p>YouTube + StarMaker Downloader</p>
+            <div class="badge-container">
+                <span class="badge badge-youtube">▶ YouTube</span>
+                <span class="badge badge-starmaker">⭐ StarMaker</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>🔗 Paste your YouTube or StarMaker link</label>
+            <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=... or https://starmaker...">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-mp3" id="mp3Btn">🎵 Download MP3</button>
+            <button class="btn btn-mp4" id="mp4Btn">🎬 Download MP4</button>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="footer">
+            © 2026 Bebabu Saver Pro. All rights reserved.
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const mp3Btn = document.getElementById('mp3Btn');
+        const mp4Btn = document.getElementById('mp4Btn');
+        const messageDiv = document.getElementById('message');
+
+        function showMessage(text, type, platform = null) {
+            messageDiv.className = 'message ' + type;
+            let platformTag = '';
+            if (platform === 'youtube') {
+                platformTag = '<span class="platform-tag platform-youtube">▶ YouTube</span> ';
+            } else if (platform === 'starmaker') {
+                platformTag = '<span class="platform-tag platform-starmaker">⭐ StarMaker</span> ';
+            }
+            messageDiv.innerHTML = platformTag + text;
+            messageDiv.style.display = 'block';
+        }
+
+        function download(format) {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showMessage('❌ Please enter a valid URL!', 'error');
+                return;
+            }
+
+            let platform = 'unknown';
+            if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('/shorts/')) {
+                platform = 'youtube';
+            } else if (url.includes('starmaker')) {
+                platform = 'starmaker';
+            } else {
+                showMessage('❌ Only YouTube or StarMaker URLs are supported!', 'error');
+                return;
+            }
+
+            mp3Btn.disabled = true;
+            mp4Btn.disabled = true;
+
+            showMessage(`⏳ ${platform.toUpperCase()} ${format.toUpperCase()} download starting... Please wait.`, 'info', platform);
+
+            fetch('/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url, format_type: format })
+            })
+            .then(response => {
+                const contentType = response.headers.get('Content-Type') || '';
+                
+                if (contentType.includes('application/octet-stream') || 
+                    contentType.includes('video/') || 
+                    contentType.includes('audio/')) {
+                    
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = format === 'mp3' ? 'audio.mp3' : 'video.mp4';
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                        if (match) filename = match[1];
+                    }
+                    
+                    return response.blob().then(blob => {
+                        const downloadUrl = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = downloadUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(downloadUrl);
+                        showMessage(`✅ ${format.toUpperCase()} download completed!`, 'success', platform);
+                        urlInput.value = '';
+                    });
+                }
+                
+                return response.json().then(data => {
+                    if (data.success) {
+                        showMessage(`✅ ${format.toUpperCase()} download completed!`, 'success', platform);
+                        urlInput.value = '';
+                    } else {
+                        throw new Error(data.message || 'Download failed');
+                    }
+                });
+            })
+            .catch(error => {
+                showMessage(`❌ ${error.message}`, 'error');
+            })
+            .finally(() => {
+                mp3Btn.disabled = false;
+                mp4Btn.disabled = false;
+            });
+        }
+
+        mp3Btn.addEventListener('click', () => download('mp3'));
+        mp4Btn.addEventListener('click', () => download('mp4'));
+
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                mp3Btn.click();
+            }
+        });
+    </script>
+</body>
+</html>
